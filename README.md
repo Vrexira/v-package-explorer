@@ -19,6 +19,8 @@ import media files into existing packages, and toggle the display of child items
 - **VPK Creation**: Create new VPK (Valky's Package) packages from a selected directory or multiple directories listed in a text file.
 - **Settings Configuration**: Configure author name and other settings for the VPK (Valky's Package) packages.
 
+![packager](https://valkyteq.com/static/img/preview/packager.png?)
+
 <br><br>
 
 ## Prerequisites
