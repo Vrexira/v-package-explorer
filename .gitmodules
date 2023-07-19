@@ -1,0 +1,3 @@
+[submodule "argoncrypto"]
+	path = argoncrypto
+	url = https://github.com/ValkyFischer/argon-crypto
