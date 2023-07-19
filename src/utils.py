@@ -73,10 +73,17 @@ def create_config(path):
         author = PESetup.setup_author()
     if author is None:
         sys.exit()
+    
+    compressor = False
+    while compressor is False:
+        compressor = PESetup.setup_compressor()
+    if compressor is None:
+        sys.exit()
         
     data = {
         "Settings": {"author": author},
-        "ArgonCrypto": {"key": argon_key, "iv" : argon_iv}
+        "ArgonCrypto": {"key": argon_key, "iv" : argon_iv},
+        "Compressor": {"mode": compressor}
     }
     save_config(path, data)
     return read_config(r".\settings.argon")

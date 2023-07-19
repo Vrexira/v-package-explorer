@@ -2,6 +2,7 @@ import base64
 import io
 import os
 import subprocess
+import sys
 import time
 import tkinter as tk
 import webbrowser
@@ -12,6 +13,7 @@ from PIL import Image, ImageTk
 
 from packager import Packager, get_vpk_info
 from icon import EMBEDDED_ICON
+from setup import PESetup
 from utils import get_file_type, format_file_size, read_config, save_config, get_uniqueid, CREATE_NO_WINDOW, \
     create_config
 
@@ -88,7 +90,7 @@ class PackageExplorer:
         # Bind window resize event to update frame widths
         self.window.bind("<Configure>", self.update_frame_widths)
     
-    def create_popup_window(self, title, text, method, uinput=False):
+    def create_popup_window(self, title, text, method, uinput = False, udown: list = False):
         self.popup_window = tk.Toplevel()
         self.popup_window.title(title)
         # icon_data = base64.b64decode(EMBEDDED_ICON)
@@ -103,12 +105,19 @@ class PackageExplorer:
         if uinput:
             entry = tk.Entry(self.popup_window)
             entry.grid(row = 1, column = 0, columnspan = 4, padx = 10, pady = 5)
-            
-        ok_button = tk.Button(self.popup_window, text="OK", command=(lambda: method(entry.get())) if uinput else method, width = 10)
-        ok_button.grid(row=2 if uinput else 1, column=1, padx=5, pady=5, sticky = "e")
+        if udown:
+            ddown_var = tk.StringVar()
+            ddown_box = ttk.Combobox(self.popup_window, textvariable = ddown_var)
+            ddown_box['values'] = udown
+            ddown_box.current(0)
+            ddown_box.grid(row = 1, column = 0, columnspan = 4, padx = 10, pady = 10)
+        
+        command = (lambda: method(entry.get(), ddown_var.get())) if uinput and udown else (lambda: method(entry.get())) if uinput else (lambda: method(ddown_var.get())) if udown else method
+        ok_button = tk.Button(self.popup_window, text="OK", command=command, width = 10)
+        ok_button.grid(row=2 if uinput or udown else 1, column=1, padx=5, pady=5, sticky = "e")
     
         cancel_button = tk.Button(self.popup_window, text="Cancel", command=self.popup_window.destroy, width = 10)
-        cancel_button.grid(row=2 if uinput else 1, column=2, padx=5, pady=5, sticky = "w")
+        cancel_button.grid(row=2 if uinput or udown else 1, column=2, padx=5, pady=5, sticky = "w")
     
         self.popup_window.resizable(False, False)
     
@@ -139,6 +148,7 @@ class PackageExplorer:
         setting_menu = tk.Menu(menubar, tearoff=0)
         setting_menu.add_command(label="Argon Crypto", command=self.ask_for_crypto_key)
         setting_menu.add_command(label="Set Author", command=self.ask_for_author)
+        setting_menu.add_command(label="Compressor", command=self.ask_for_compressor)
 
         about_menu = tk.Menu(menubar, tearoff=0)
         about_menu.add_command(label="Open Website", command=self.do_open_website)
@@ -507,6 +517,7 @@ class PackageExplorer:
                 encryption = info[6]
                 key_length = info[7]
                 version = info[8]
+                compression = info[9].replace("\00", "").upper()
             else:
                 app_format = kind
 
@@ -541,6 +552,7 @@ class PackageExplorer:
                 self.file_infobox.insert(tk.END, f"Creation Time: {creation_time}")
                 self.file_infobox.insert(tk.END, f"Encryption Type: {encryption}")
                 self.file_infobox.insert(tk.END, f"Encryption Length: {key_length} Bytes")
+                self.file_infobox.insert(tk.END, f"Compression Type: {compression}")
             self.file_infobox.insert(tk.END, f"MIME: {app_mime}")
             return True
         
@@ -762,7 +774,7 @@ class PackageExplorer:
             self.argon_iv = argon_iv
             self.config['ArgonCrypto']['key'] = argon_key
             self.config['ArgonCrypto']['iv'] = argon_iv
-            save_config(r".\config.ini", self.config)
+            save_config(r".\settings.argon", self.config)
             argonize = (self.argon_key, self.argon_iv)
             self.ap = Packager(argonize, self.config)
             messagebox.showinfo("Argon Crypto | Success", "The crypto Key and IV has been changed successfully.")
@@ -792,63 +804,33 @@ class PackageExplorer:
             return
         
         self.config['Settings']['author'] = author
-        save_config(r".\config.ini", self.config)
+        save_config(r".\settings.argon", self.config)
         argonize = (self.argon_key, self.argon_iv)
         self.ap = Packager(argonize, self.config)
         messagebox.showinfo("VPK Settings | Success", "The author name has been changed successfully.")
     
-    def ask_for_setup(self, path):
-        key_info = ("VPK Setup | Crypto Key", f"Enter the Crypto Key, min 64 chars: {'  ' * 50}")
-        while self.argon_key is False:
-            self.create_popup_window(key_info[0], key_info[1], self.set_argon_key, True)
-        if self.argon_key is None:
-            sys.exit()
-        
-        iv_info = ("VPK Setup | Crypto IV", f"Enter the Crypto IV, min 24 chars: {'  ' * 50}")
-        while self.argon_iv is False:
-            self.create_popup_window(iv_info[0], iv_info[1], self.set_argon_iv, True)
-        if self.argon_iv is None:
-            sys.exit()
-        
-        author_info = ("VPK Setup | Crypto IV", f"Enter the Crypto IV, min 24 chars: {'  ' * 50}")
-        while self.author is False:
-            self.create_popup_window(author_info[0], author_info[1], self.set_author, True)
-        if self.author is None:
-            sys.exit()
-        
-        data = {
-            "Settings": {"author": self.author},
-            "ArgonCrypto": {"key": self.argon_key, "iv" : self.argon_iv}
-        }
-        save_config(path, data)
-        return read_config(r".\settings.argon")
-        
-    def set_argon_key(self, argon_key):
-        if argon_key is None:
-            messagebox.showinfo("VPK Setup | Crypto Key", "Operation canceled.\nThe crypto Key and IV has not been changed.")
-            self.argon_key = None
-        elif argon_key == "" or len(argon_key) < 64:
-            messagebox.showerror("VPK Setup | Crypto Key", "The crypto Key must not be empty and set to a minimum length of 64!")
-            self.argon_key = False
-        self.argon_key = argon_key
-        
-    def set_argon_iv(self, argon_iv):
-        if argon_iv is None:
-            messagebox.showinfo("VPK Setup | Crypto IV", "Operation canceled.\nThe crypto Key and IV has not been changed.")
-            self.argon_iv = None
-        elif argon_iv == "" or len(argon_iv) < 64:
-            messagebox.showerror("VPK Setup | Crypto IV", "The crypto IV must not be empty and set to a minimum length of 24!")
-            self.argon_iv = False
-        self.argon_iv = argon_iv
-        
-    def set_author(self, author):
-        if author is None:
-            messagebox.showinfo("VPK Setup | Author", "Operation canceled.\nThe author name has not been changed.")
-            self.author = None
-        elif author == "" or len(author) < 64:
-            messagebox.showerror("VPK Setup | Author", "The author name must not be empty and not greater than 16!")
-            self.author = False
-        self.author = author
+    def ask_for_compressor(self):
+        title = "VPK Settings | Compressor"
+        text = "Choose a compressor do compress and deflate file sizes.\n"
+        text += "The higher compression ration, the slower the time."
+        dropdown = ['Gzip (Balanced)', 'ZSTD (Balanced)', 'Bzip2 (Slow)', 'LZMA (Slow)', 'LZ4 (Fast)']
+        self.create_popup_window(title, text, self.set_compressor, udown = dropdown)
+    
+    def set_compressor(self, compressor):
+        self.popup_window.destroy()
+        compressor = compressor.split(" ")[0].lower()
+        if compressor is None:
+            messagebox.showinfo("VPK Settings | Cancel", "Operation canceled.\nThe compression method has not been changed.")
+            return
+        elif compressor == "" or compressor not in ['gzip', 'zstd', 'bzip2', 'lzma', 'lz4']:
+            messagebox.showerror("VPK Settings | Error", "The author name must not be empty and not greater than 16!")
+            return
+
+        self.config['Compressor']['mode'] = compressor
+        save_config(r".\settings.argon", self.config)
+        argonize = (self.argon_key, self.argon_iv)
+        self.ap = Packager(argonize, self.config)
+        messagebox.showinfo("VPK Settings | Success", "The compression method has been changed successfully.")
     
     def do_open_website(self):
         webbrowser.open("https://dev.valkyteq.com")

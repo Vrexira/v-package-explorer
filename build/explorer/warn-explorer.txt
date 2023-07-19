@@ -86,6 +86,7 @@ missing module named copy_reg - imported by cPickle (top-level), cStringIO (top-
 missing module named cPickle - imported by pycparser.ply.yacc (delayed, optional)
 missing module named cffi._pycparser - imported by cffi (optional), cffi.cparser (optional)
 missing module named StringIO - imported by Cryptodome.Util.py3compat (conditional)
+missing module named backend_rust - imported by zstandard (conditional)
 missing module named olefile - imported by PIL.FpxImagePlugin (top-level), PIL.MicImagePlugin (top-level)
 missing module named 'packaging.version' - imported by PIL.Image (delayed, conditional, optional)
 missing module named numpy - imported by PIL.Image (delayed, conditional, optional)

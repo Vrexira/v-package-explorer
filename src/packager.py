@@ -1,13 +1,18 @@
+import gzip
 import os
 import pickle
 import struct
 import time
+import _lzma
+import zstandard as zstd
 from tkinter import messagebox
+
 
 import argoncrypto as ac
 from utils import get_file_data
+from compressor import Compressor
 
-HEADER_FORMAT = '16s22sI16s17sI7sII'  # Example format: 16 bytes for name, 32 bytes for description, 4 bytes for size
+HEADER_FORMAT = '16s22sI16s17sI7sII5s'  # Example format: 16 bytes for name, 32 bytes for description, 4 bytes for size
 
 
 def get_vpk_info(data, bin=False):
@@ -15,14 +20,14 @@ def get_vpk_info(data, bin=False):
         # read the header from a file in binary mode
         with open(data, 'rb') as file:
             header_data = file.read(struct.calcsize(HEADER_FORMAT))
-            filename, fileinfo, filesize, author, copyright, timestamp, encryption, key_length, version = struct.unpack(HEADER_FORMAT, header_data)
+            filename, fileinfo, filesize, author, copyright, timestamp, encryption, key_length, version, compression = struct.unpack(HEADER_FORMAT, header_data)
     
     else:
         # read the header from binary data
         header_data = data[:struct.calcsize(HEADER_FORMAT)]
-        filename, fileinfo, filesize, author, copyright, timestamp, encryption, key_length, version = struct.unpack(HEADER_FORMAT, header_data)
+        filename, fileinfo, filesize, author, copyright, timestamp, encryption, key_length, version, compression = struct.unpack(HEADER_FORMAT, header_data)
     
-    return filename.decode(), fileinfo.decode(), filesize, author.decode(), copyright.decode(), timestamp, encryption.decode(), key_length, version
+    return filename.decode(), fileinfo.decode(), filesize, author.decode(), copyright.decode(), timestamp, encryption.decode(), key_length, version, compression.decode()
 
 class Packager:
     def __init__(self, argonize: tuple, config: dict):
@@ -69,26 +74,44 @@ class Packager:
         encryption = ac.MODES[self.mode].encode('utf-8')
         key_length = len(self.argonize)
         version = 1
+        compression = self.config['Compressor']['mode'].encode('utf-8')
         
-        header_data = struct.pack(HEADER_FORMAT, filename, fileinfo, filesize, author, copyright, timestamp, encryption, key_length, version)
-        v_package = header_data + encrypted_data_bytes
+        header_data = struct.pack(HEADER_FORMAT, filename, fileinfo, filesize, author, copyright, timestamp, encryption, key_length, version, compression)
+        v_package_c = header_data + Compressor.deflate(encrypted_data_bytes, compression.decode())
         
         with open(self.package, 'wb') as file:
-            file.write(v_package)
+            file.write(v_package_c)
     
     def load(self):
+        error = False
         with open(self.package, 'rb') as file:
             header_data = file.read(struct.calcsize(HEADER_FORMAT))
             info = struct.unpack(HEADER_FORMAT, header_data)
-            encrypted_data = file.read(info[2])
+            try:
+                encrypted_data = Compressor.inflate(file.read(info[2]), self.config['Compressor']['mode'])
+            except ValueError:
+                error = True
+            except gzip.BadGzipFile:
+                error = True
+            except OSError:
+                error = True
+            except _lzma.LZMAError:
+                error = True
+            except RuntimeError:
+                error = True
+            except zstd.ZstdError:
+                error = True
         
-        try:
-            decrypted_data_bytes = pickle.loads(encrypted_data)
-            decrypted_data = ac.decrypt_data(self.argonize, decrypted_data_bytes, mode = 0)
-            self.byte_dict = pickle.loads(decrypted_data)
-            
-        except ValueError:
-            messagebox.showerror("Argon Crypto | Error", "The crypto Key and IV do not match for this package!")
+        if not error:
+            try:
+                decrypted_data_bytes = pickle.loads(encrypted_data)
+                decrypted_data = ac.decrypt_data(self.argonize, decrypted_data_bytes, mode = 0)
+                self.byte_dict = pickle.loads(decrypted_data)
+                
+            except ValueError:
+                messagebox.showerror("Argon Crypto | Error", "The crypto Key and IV do not match for this package!")
+        else:
+            messagebox.showerror("Compressor | Error", "The compression method does not match for this package!")
     
     def create_vpk(self):
         if self.directory != str and self.directory != '' and self.directory is not None:
