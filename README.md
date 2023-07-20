@@ -13,6 +13,7 @@ import media files into existing packages, and toggle the display of child items
 - **Package Exploration**: Browse and explore the contents of VPK (Valky's Package) packages.
 - **Folder Navigation**: Toggle the display of child items in folders for easy navigation.
 - **File and Folder Management**: Create new folders, import media files into existing folders, and remove items from the package.
+- **Data Compression Methods**: Compress the data of VPK packages with different compression methods to reduce its file size.
 - **Encryption and Decryption**: V Package Explorer uses AES-GCM (Advanced Encryption Standard-Galois/Counter Mode) with a key derived from Argon2 for encryption and decryption of package contents, providing strong security.
 - **Argon2 Key Derivation**: The encryption key for AES-GCM is derived using Argon2, a memory-hard password hashing function, ensuring the security and confidentiality of package contents.
 - **Crypto Key and IV Configuration**: Change the cryptographic key and initialization vector (IV) used for encryption and decryption of package contents.
@@ -27,19 +28,28 @@ import media files into existing packages, and toggle the display of child items
 
 Before running the V Package Explorer, make sure you have the following Python modules installed:
 
-- Pillow 10.0.0
-- argon2-cffi 21.3.0
-- argon2-cffi-bindings 21.2.0
-- cffi 1.15.1
-- pycparser 2.21
-- pycryptodomex 3.18.0
-- python-magic 0.4.27
-- python-magic-bin 0.4.14
+- Pillow (10.0.0)
+- argon2-cffi (21.3.0)
+- argon2-cffi-bindings (21.2.0)
+- cffi (1.15.1)
+- pycparser (2.21)
+- pycryptodomex (3.18.0)
+- python-magic (0.4.27)
+- python-magic-bin (0.4.14)
+- altgraph (0.17.3)
+- lz4 (4.3.2)
+- pefile (2023.2.7)
+- pywin32-ctypes (0.2.2)
+- zstandard (0.21.0)
 
 You can install these modules using the following command:
 
 ```bash
-pip install Pillow==10.0.0 argon2-cffi==21.3.0 argon2-cffi-bindings==21.2.0 cffi==1.15.1 pycparser==2.21 pycryptodomex==3.18.0 python-magic==0.4.27 python-magic-bin==0.4.14
+Explanation:
+    pip install <module-name>==<version>
+
+Example:
+    pip install Pillow==10.0.0
 ```
 
 Make sure you have a working Python environment with the necessary dependencies before proceeding.
@@ -57,6 +67,30 @@ V Package Explorer ensures the security of your package contents by using the fo
 
 The Argon2 key derivation function is used to securely derive the encryption key from a user-provided passphrase. 
 The memory-hardness property of Argon2 makes it resistant to various attacks, including brute-force and dictionary attacks.
+
+<br><br>
+
+## Data Compressor
+VPK now includes a Compressor, which can significantly reduce the file sizes of VPK packages. By default, it uses 
+`Zstandard` as the compression method, which can reduce file sizes by up to 50% compared to uncompressed VPKs.
+
+### Methods
+The Compressor class provides two static methods:
+- `deflate(data, compression_mode)`: Compresses the given data using the specified compression mode.
+- `inflate(compressed_data, compression_mode)`: Decompresses the given compressed data using the specified compression mode.  
+  
+
+### Modes
+The following compression modes are available:
+
+- **Gzip (Balanced)**: Provides a balance between compression speed and file size reduction.
+- **ZSTD (Balanced)**: Uses Zstandard compression, which offers a good trade-off between speed and compression ratio. It can significantly reduce VPK file sizes.
+- **Bzip2 (Slow)**: Offers a high compression ratio but is relatively slow in comparison to other methods.
+- **LZMA (Slow)**: Provides excellent compression at the cost of slower compression and decompression speeds.
+- **LZ4 (Fast)**: Prioritizes speed over compression ratio, making it ideal for scenarios where fast decompression is crucial.
+
+Choose the compression method that best fits your needs based on the trade-off between compression speed and file size reduction.
+
 
 <br><br>
 
@@ -115,7 +149,9 @@ I would like to acknowledge the following contributors for their support and con
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more details.
+This project is licensed under the Creative Commons Attribution-NonCommercial 4.0 International License (CC BY-NC 4.0). 
+This license allows others to use and modify the software for non-commercial purposes as long as they give appropriate 
+credit. See the [LICENSE](LICENSE) file for more details.
 
 <br><br>
 
