@@ -1,8 +1,8 @@
 import base64
 import io
+import logging
 import os
 import subprocess
-import sys
 import time
 import tkinter as tk
 import webbrowser
@@ -13,7 +13,6 @@ from PIL import Image, ImageTk
 
 from packager import Packager, get_vpk_info
 from icon import EMBEDDED_ICON
-from setup import PESetup
 from utils import get_file_type, format_file_size, read_config, save_config, get_uniqueid, CREATE_NO_WINDOW, \
     create_config
 
@@ -22,6 +21,9 @@ SIGNS = ("⇢ ", "🖼 ", "♬ ", "⍲ ", "📄 ", "？ ", "☆ ", "📂 ", "  
 
 class PackageExplorer:
     def __init__(self):
+        for v in valky:
+            self.stdout(v)
+        
         # embedded ico
         self.ico = None
         
@@ -68,9 +70,57 @@ class PackageExplorer:
 
         # Build the Tkinter window
         self.build_window()
+    
+    @staticmethod
+    def stdout(message):
+        """Prints the message and logs it using logging.info()."""
+        logging.info(message)
+    
+    def show_log(self):
+        """Displays the log window with all the logged messages."""
+        self.stdout(f"show log")
+        log_window = tk.Toplevel(self.window)
+        log_window.title("V Package Explorer | Logger | ..a project by VALKYTEQ")
+        log_window.geometry("1000x500")
+        log_window.resizable(False, False)
+        
+        log_text = tk.Text(log_window, wrap = "word", bg="black", state=tk.DISABLED, font=("Consolas", 11))
+        log_text.pack(fill = "both", expand = True)
+        
+        def update_log():
+            # Load the log messages from the log file and display them in the window
+            try:
+                with open("logger.log", "r") as log_file:
+                    log_text.config(state = tk.NORMAL)
+                    log_text.delete(1.0, tk.END)
+                    for line in log_file:
+                        log_level = line.split("[")[2].split("]")[0]  # Extract the log level from the log message
+                        if log_level == "INFO":
+                            log_text.insert(tk.END, line, "info")  # Use the "info" tag for INFO level logs
+                        elif log_level == "WARNING":
+                            log_text.insert(tk.END, line, "warning")  # Use the "warning" tag for WARNING level logs
+                        elif log_level == "ERROR":
+                            log_text.insert(tk.END, line, "error")  # Use the "error" tag for ERROR level logs
+                        else:
+                            log_text.insert(tk.END, line)
+                            
+            except FileNotFoundError:
+                log_text.insert(tk.END, "Log file not found.")
+            
+            log_text.see(tk.END)
+            log_text.config(state = tk.DISABLED)
+            log_window.after(1000, update_log)
+        
+        # Configure tags for different log levels
+        log_text.tag_configure("info", foreground = "lightgrey")
+        log_text.tag_configure("warning", foreground = "yellow")
+        log_text.tag_configure("error", foreground = "red")
+        # log_text.config(state = tk.DISABLED)
+        update_log()
 
     def build_window(self):
         """Build the main window."""
+        self.stdout(f"build window")
         self.window = tk.Tk()
         icon_data = base64.b64decode(EMBEDDED_ICON)
         icon_image = Image.open(io.BytesIO(icon_data))
@@ -79,7 +129,6 @@ class PackageExplorer:
         self.window.iconphoto(True, self.ico)
         self.window.title("V Package Explorer | ..a project by VALKYTEQ")
         self.window.minsize(self.minimum_width, self.minimum_height)
-        self.window.geometry(f"{self.minimum_width}x{self.minimum_height}")
         
         # Create the menu, explorer, preview and info frame
         self.create_explorer_frame()
@@ -89,8 +138,15 @@ class PackageExplorer:
 
         # Bind window resize event to update frame widths
         self.window.bind("<Configure>", self.update_frame_widths)
+        
+        ws = self.window.winfo_screenwidth()
+        hs = self.window.winfo_screenheight()
+        x = (ws / 2) - (self.minimum_width / 2)
+        y = (hs / 2) - (self.minimum_height / 2)
+        self.window.geometry('%dx%d+%d+%d' % (self.minimum_width, self.minimum_height, x, y))
     
-    def create_popup_window(self, title, text, method, uinput = False, udown: list = False):
+    def build_popup_window(self, title, text, method, uinput = False, udown: list = False):
+        self.stdout(f"build popup window {title}")
         self.popup_window = tk.Toplevel()
         self.popup_window.title(title)
         # icon_data = base64.b64decode(EMBEDDED_ICON)
@@ -120,9 +176,17 @@ class PackageExplorer:
         cancel_button.grid(row=2 if uinput or udown else 1, column=2, padx=5, pady=5, sticky = "w")
     
         self.popup_window.resizable(False, False)
+        ws = self.popup_window.winfo_screenwidth()
+        hs = self.popup_window.winfo_screenheight()
+        w = 330
+        h = 135
+        x = (ws / 2) - (w / 2)
+        y = (hs / 2) - (h / 2)
+        self.popup_window.geometry('%dx%d+%d+%d' % (w, h, x, y))
     
     def create_menu_frame(self):
         """Create the menu bar and menus."""
+        self.stdout(f"create menu frame")
         menubar = tk.Menu(self.window)
         self.window.config(menu=menubar)
 
@@ -146,9 +210,12 @@ class PackageExplorer:
         vpk_menu.add_command(label="Export...", command=self.export_package)
 
         setting_menu = tk.Menu(menubar, tearoff=0)
-        setting_menu.add_command(label="Argon Crypto", command=self.ask_for_crypto_key)
-        setting_menu.add_command(label="Set Author", command=self.ask_for_author)
+        setting_menu.add_command(label="Author", command=self.ask_for_author)
         setting_menu.add_command(label="Compressor", command=self.ask_for_compressor)
+        setting_menu.add_command(label="Encryption Key", command=self.ask_for_crypto_key)
+        setting_menu.add_command(label="Encryption Mode", command=self.ask_for_encryption)
+        setting_menu.add_separator()
+        setting_menu.add_command(label="Show Log", command=self.show_log)
 
         about_menu = tk.Menu(menubar, tearoff=0)
         about_menu.add_command(label="Open Website", command=self.do_open_website)
@@ -162,6 +229,7 @@ class PackageExplorer:
     
     def create_explorer_frame(self):
         """Create the file explorer frame."""
+        self.stdout(f"create explorer frame")
         self.explorer_frame = tk.Frame(self.window)
         self.explorer_frame.pack(side = tk.LEFT, fill = tk.BOTH, expand = False)
 
@@ -178,6 +246,7 @@ class PackageExplorer:
     
     def create_preview_frame(self):
         """Create the preview frame for displaying images."""
+        self.stdout(f"create preview frame")
         self.preview_frame = tk.Frame(self.window)
         self.preview_frame.pack(side = tk.LEFT, fill = tk.BOTH, expand = False)
         
@@ -197,6 +266,7 @@ class PackageExplorer:
     
     def create_info_frame(self):
         """Create the info frame for displaying file information."""
+        self.stdout(f"create info frame")
         self.info_frame = tk.Frame(self.window)
         self.info_frame.pack(side = tk.LEFT, fill = tk.BOTH, expand = False)
 
@@ -263,7 +333,8 @@ class PackageExplorer:
         file_path = filedialog.askopenfilename(filetypes=[("Text Files", "*.txt")])
         with open(file_path, "r") as file:
             paths = [line.rstrip('\n') for line in file]
-        
+
+        self.stdout(f"open bulkfile {file_path}")
         for path in paths:
             self.ap.package = f"{path}.vpk"
             self.ap.directory = path
@@ -277,6 +348,7 @@ class PackageExplorer:
     
     def open_file_explorer(self, targeted=False):
         """Open Windows File Explorer with the location of the VPK file."""
+        self.stdout(f"open file explorer {targeted}")
         vpk_folder: str = None
         if targeted:
             vpk_folder = targeted
@@ -284,6 +356,7 @@ class PackageExplorer:
             vpk_folder = os.path.dirname(self.ap.package)
             
         if vpk_folder is None:
+            logging.error("An error occurred during process: Cannot open file location.")
             messagebox.showerror("Windows Error", f"An error occurred during process:\nCannot open file location.")
             return
             
@@ -294,6 +367,7 @@ class PackageExplorer:
         """Open a package file and load the data."""
         filetypes = [("V Package Files", "*.vpk")]
         file_path = filedialog.askopenfilename(filetypes=filetypes)
+        self.stdout(f"open package {file_path}")
         if file_path:
             self.clear_data()
             self.ap.package = file_path
@@ -305,13 +379,15 @@ class PackageExplorer:
     def export_package(self):
         """Export all data from the current open VPK package."""
         if not self.ap.byte_dict:
+            logging.error("No package data found.")
             messagebox.showerror("Export Error", "No package data found.")
             return
         
         export_path = filedialog.askdirectory(title = "Select Export Folder")
         if not export_path:
             return
-        
+
+        self.stdout(f"export package {export_path}")
         try:
             for folder, file_dict in self.ap.byte_dict.items():
                 folder_path = os.path.join(export_path, folder)
@@ -326,12 +402,14 @@ class PackageExplorer:
             self.open_file_explorer(export_path)
             
         except Exception as e:
+            logging.error(f"An error occurred during export: {str(e)}")
             messagebox.showerror("Export Error", f"An error occurred during export: {str(e)}")
     
     def create_package(self):
         """Build a new package file from a directory."""
         self.popup_window.destroy()
         folder_path = filedialog.askdirectory(title = "Select Directory to Pack")
+        self.stdout(f"create package {folder_path}")
         if folder_path:
             self.clear_data()
             self.ap.package = f"{folder_path}.vpk"
@@ -344,6 +422,7 @@ class PackageExplorer:
     def save_package(self):
         if self.ap.byte_dict:
             if self.ap.package:
+                self.stdout(f"save package {self.ap.package}")
                 self.ap.save()
                 messagebox.showinfo("Package Saved", "The package has been saved successfully.")
                 self.clear_data()
@@ -352,6 +431,7 @@ class PackageExplorer:
                 self.create_folder_tree()
                 self.populate_file_listbox()
         else:
+            logging.error(f"There is no package data to save.")
             messagebox.showerror("Save Package Error", "There is no package data to save.")
 
     def save_as_package(self):
@@ -360,6 +440,7 @@ class PackageExplorer:
             file_path = filedialog.asksaveasfilename(filetypes=filetypes)
             if file_path:
                 self.ap.package = file_path
+                self.stdout(f"save package as {self.ap.package}")
                 self.ap.save()
                 messagebox.showinfo("Package Saved", "The package has been saved successfully.")
                 self.clear_data()
@@ -368,6 +449,7 @@ class PackageExplorer:
                 self.create_folder_tree()
                 self.populate_file_listbox()
         else:
+            logging.error(f"There is no package data to save.")
             messagebox.showerror("Save Package Error", "There is no package data to save.")
 
     def show_image(self, image_data):
@@ -424,6 +506,7 @@ class PackageExplorer:
                     case "octet-stream":
                         self.get_application_info(item)
                     case _:
+                        logging.error(f"Unknown mime type {kind}/{app_type}")
                         pass
                     
             case "text":
@@ -433,8 +516,10 @@ class PackageExplorer:
                     case "html":
                         self.get_application_info(item)
                     case _:
+                        logging.error(f"Unknown mime type {kind}/{app_type}")
                         pass
             case _:
+                logging.error(f"Unknown mime type {kind}/{app_type}")
                 pass
         
         return kind
@@ -478,7 +563,8 @@ class PackageExplorer:
             self.file_infobox.insert(tk.END, f"MIME: {app_mime}")
             return True
         
-        except Exception as exc:
+        except Exception as ex:
+            logging.error(f"Error getting music info {ex}")
             return False
     
     def get_application_info(self, item):
@@ -556,7 +642,8 @@ class PackageExplorer:
             self.file_infobox.insert(tk.END, f"MIME: {app_mime}")
             return True
         
-        except Exception as exc:
+        except Exception as ex:
+            logging.error(f"Error getting application info {ex}")
             return False
     
     def get_image_info(self, item):
@@ -604,7 +691,8 @@ class PackageExplorer:
             self.file_infobox.insert(tk.END, f"MIME: {app_mime}")
             return True
         
-        except Exception as exc:
+        except Exception as ex:
+            logging.error(f"Error getting image info {ex}")
             return False
 
     def toggle_folder(self, folder):
@@ -639,7 +727,7 @@ class PackageExplorer:
                         case "octet-stream":
                             icon = "📦"
                         case _:
-                            print(kind, app_type)
+                            logging.error(kind, app_type)
                             icon = "？"
                     
                 case "text":
@@ -649,10 +737,10 @@ class PackageExplorer:
                         case "html":
                             icon = "≯"
                         case _:
-                            print(kind, app_type)
+                            logging.error(kind, app_type)
                             icon = "？"
                 case _:
-                    print(kind, app_type)
+                    logging.error(kind, app_type)
                     icon = "？"
             self.file_listbox.insert(index + 1, f"          {icon}   {child[0]}")
             index += 1
@@ -728,8 +816,10 @@ class PackageExplorer:
     def import_media(self):
         file_path = filedialog.askopenfilename()
         if file_path:
+            self.stdout(f"import media {file_path}")
             folder_name = self.ask_for_folder_name()
             if folder_name:
+                self.stdout(f"import media {folder_name}")
                 with open(file_path, "rb") as file:
                     byte_data = file.read()
                 if byte_data:
@@ -738,6 +828,7 @@ class PackageExplorer:
     def create_new_folder(self):
         folder_name = self.ask_for_folder_name()
         if folder_name:
+            self.stdout(f"create folder {folder_name}")
             if len(self.folder_tree) < 1:
                 self.file_listbox.insert(tk.END, f"  📦   New...")
             new_folder = [folder_name, [], None]
@@ -749,24 +840,30 @@ class PackageExplorer:
         return folder_name
 
     def ask_for_crypto_key(self):
+        self.stdout(f"Argon Crypto")
         argon_key = simpledialog.askstring("Argon Crypto | Step 1", f"Argon Key: {self.argon_key}\nArgon IV: {self.argon_iv}\n\nEnter the new Argon Key:")
         if argon_key is None:
+            self.stdout(f"Argon Crypto | {argon_key}")
             messagebox.showinfo("Argon Crypto | Cancel", "Operation canceled.\nThe crypto Key and IV has not been changed.")
             return
         elif argon_key == "" or len(argon_key) < 64:
+            logging.error(f"Argon Crypto | {argon_key}")
             messagebox.showerror("Argon Crypto | Error", "The crypto Key must not be empty and set to a minimum length of 64!")
             return
             
         argon_iv = simpledialog.askstring("Argon Crypto | Step 2", f"Argon Key: {self.argon_key}\nArgon IV: {self.argon_iv}\n\nEnter the new Argon IV:")
         if argon_iv is None:
+            self.stdout(f"Argon Crypto | {argon_iv}")
             messagebox.showinfo("Argon Crypto | Cancel", "Operation canceled.\nThe crypto Key and IV has not been changed.")
             return
         elif argon_iv == "" or len(argon_iv) < 24:
+            logging.error(f"Argon Crypto | {argon_iv}")
             messagebox.showerror("Argon Crypto | Error", "The crypto IV must not be empty and set to a minimum length of 24!")
             return
         
         argon_prompt = simpledialog.askstring("Argon Crypto | Step 3", f"Old Argon Key: {self.argon_key}\nOld Argon IV: {self.argon_iv}\n\nNew Argon Key: {argon_key}\nNew Argon IV: {argon_iv}\n\n\nAre you sure to overwrite the crypto Key and IV?\n\nWrite 'ArgonCrypto' to confirm:")
         if argon_prompt is None:
+            self.stdout(f"Argon Crypto | {argon_prompt}")
             messagebox.showinfo("Argon Crypto | Cancel", "Operation canceled.\nThe crypto Key and IV has not been changed.")
             return
         elif argon_prompt == 'ArgonCrypto':
@@ -777,29 +874,34 @@ class PackageExplorer:
             save_config(r".\settings.argon", self.config)
             argonize = (self.argon_key, self.argon_iv)
             self.ap = Packager(argonize, self.config)
+            self.stdout(f"Argon Crypto | Success")
             messagebox.showinfo("Argon Crypto | Success", "The crypto Key and IV has been changed successfully.")
         else:
+            logging.error(f"Argon Crypto | {argon_prompt}")
             messagebox.showerror("Argon Crypto | Error", "Wrong prompt! The crypto Key and IV has not been changed!")
     
     def ask_for_bulk_creation(self):
         title = "Bulk VPK Creation | Choose File"
-        text = "Choose a text file containing paths to directories on your windows operation system.\n"
-        text += "Each directory will be packed, encrypted and saved as a *.vpk package.\n\n"
+        text = "Choose a text file containing paths to directories on your\nwindows operation system. "
+        text += "Each directory will be packed,\nencrypted and saved as a *.vpk package.\n\n"
         text += "Note: Each path must be on a new line."
-        self.create_popup_window(title, text, self.open_bulkfile)
+        self.build_popup_window(title, text, self.open_bulkfile)
     
     def ask_for_creation(self):
         title = "VPK Creation | Choose Directory"
         text = "Choose a directory on your windows operation system.\n"
-        text += "It will be packed, encrypted and saved as a *.vpk package."
-        self.create_popup_window(title, text, self.create_package)
+        text += "The package explorer gathers all files and packs them.\n\n"
+        text += "Everything will be encrypted and saved as a *.vpk package.\n"
+        self.build_popup_window(title, text, self.create_package)
 
     def ask_for_author(self):
         author = simpledialog.askstring("VPK Settings | Author", f"Author: {self.config['Settings']['author']}\n{'  ' * 50}\nEnter the new author name:")
         if author is None:
+            self.stdout(f"change author {author}")
             messagebox.showinfo("VPK Settings | Cancel", "Operation canceled.\nThe author name has not been changed.")
             return
         elif author == "" or len(author) > 16:
+            logging.error(f"change author {author}")
             messagebox.showerror("VPK Settings | Error", "The author name must not be empty and not greater than 16!")
             return
         
@@ -807,22 +909,51 @@ class PackageExplorer:
         save_config(r".\settings.argon", self.config)
         argonize = (self.argon_key, self.argon_iv)
         self.ap = Packager(argonize, self.config)
+        self.stdout(f"change author {author}")
         messagebox.showinfo("VPK Settings | Success", "The author name has been changed successfully.")
+    
+    def ask_for_encryption(self):
+        title = "VPK Settings | Encryption"
+        text = "Choose an encryption mode for VPK packages.\n"
+        text += "They are offering a different balance of speed and security."
+        dropdown = ['AES-GCM (Strong)', 'AES-CTR (Fast)', 'AES-CBC (Basic)']
+        self.build_popup_window(title, text, self.set_encryption, udown=dropdown)
+
+    def set_encryption(self, encryption):
+        self.popup_window.destroy()
+        encryption = encryption.split(" ")[0].lower()
+        if encryption is None:
+            self.stdout(f"change encryption {encryption}")
+            messagebox.showinfo("VPK Settings | Cancel", "Operation canceled.\nThe encryption method has not been changed.")
+            return
+        elif encryption == "" or encryption not in ['aes-gcm', 'aes-ctr', 'aes-cbc']:
+            logging.error(f"change encryption {encryption}")
+            messagebox.showerror("VPK Settings | Error", "Invalid encryption method selected.")
+            return
+
+        self.config['ArgonCrypto']['mode'] = encryption
+        save_config(r".\settings.argon", self.config)
+        argonize = (self.argon_key, self.argon_iv)
+        self.ap = Packager(argonize, self.config)
+        self.stdout(f"change encryption {encryption}")
+        messagebox.showinfo("VPK Settings | Success", "The encryption method has been changed successfully.")
     
     def ask_for_compressor(self):
         title = "VPK Settings | Compressor"
-        text = "Choose a compressor do compress and deflate file sizes.\n"
+        text = "Choose a compressor do compress and deflate packages.\n"
         text += "The higher compression ration, the slower the time."
         dropdown = ['Gzip (Balanced)', 'ZSTD (Balanced)', 'Bzip2 (Slow)', 'LZMA (Slow)', 'LZ4 (Fast)']
-        self.create_popup_window(title, text, self.set_compressor, udown = dropdown)
+        self.build_popup_window(title, text, self.set_compressor, udown = dropdown)
     
     def set_compressor(self, compressor):
         self.popup_window.destroy()
         compressor = compressor.split(" ")[0].lower()
         if compressor is None:
+            self.stdout(f"change encryption {compressor}")
             messagebox.showinfo("VPK Settings | Cancel", "Operation canceled.\nThe compression method has not been changed.")
             return
         elif compressor == "" or compressor not in ['gzip', 'zstd', 'bzip2', 'lzma', 'lz4']:
+            logging.error(f"change encryption {compressor}")
             messagebox.showerror("VPK Settings | Error", "The author name must not be empty and not greater than 16!")
             return
 
@@ -830,18 +961,45 @@ class PackageExplorer:
         save_config(r".\settings.argon", self.config)
         argonize = (self.argon_key, self.argon_iv)
         self.ap = Packager(argonize, self.config)
+        self.stdout(f"change encryption {compressor}")
         messagebox.showinfo("VPK Settings | Success", "The compression method has been changed successfully.")
     
     def do_open_website(self):
+        self.stdout(f"open website")
         webbrowser.open("https://dev.valkyteq.com")
     
     def do_open_github(self):
+        self.stdout(f"open github")
         webbrowser.open("https://github.com/ValkyFischer")
     
     def do_open_discord(self):
+        self.stdout(f"open discord")
         webbrowser.open("https://discord.com/invite/Nu7p6wX9Nb")
             
 
 if __name__ == "__main__":
-    APE = PackageExplorer()
-    APE.window.mainloop()
+    logging.basicConfig(
+        level = logging.INFO,
+        format = "[%(asctime)s] [%(levelname)s] %(message)s",
+        handlers = [
+            logging.StreamHandler(),
+            logging.FileHandler("logger.log", mode='w')  # Log to a file as well
+        ]
+    )
+    
+    valky = [
+        r'===================================================================================',
+        r'                      __    __  __     _      _   __ __  __                        ',
+        r'                      \ \  / / /  \   | |    | |_/ / \ \/ /                        ',
+        r'                       \ \/ / / __ \  | |__  |  __ \  \  /                         ',
+        r'                        \__/ /_/  \_\ |____| |_|  \_\ /_/                          ',
+        r'                                                                                   ',
+        r'==================================================================================='
+    ]
+    
+    try:
+        APE = PackageExplorer()
+        APE.window.mainloop()
+        
+    except Exception as exc:
+        logging.error(exc)

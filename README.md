@@ -57,28 +57,28 @@ Make sure you have a working Python environment with the necessary dependencies 
 <br><br>
 
 ## Encryption and Security
+The AES encryption modes used in combination with the Argon2 key derivation function provide a formidable defense 
+against potential threats. The integration of Argon2 for key derivation further fortifies the security, making 
+the V Package Explorer a reliable and robust solution for protecting data.
 
-V Package Explorer ensures the security of your package contents by using the following encryption and key derivation mechanisms:
+### AES Modes
+The V Package Explorer ensures the security of your package contents by using the following encryption modes:
+- **AES-GCM**: Strong encryption with authentication, ensuring data integrity and confidentiality.
+- **AES-CTR**: Fast encryption, allowing parallel processing, but does not provide built-in authentication.
+- **AES-CBC**: Basic encryption, slower due to sequential processing and requires a padding scheme for irregular length data.
 
-- **Encryption Algorithm**: AES-GCM (Advanced Encryption Standard-Galois/Counter Mode)
-- **Key Derivation Function**: Argon2 (Memory-Hard Password Hashing)
-- **Cryptographic Key Size**: 256 bits (32 bytes)
-- **Initialization Vector (IV) Size**: 96 bits (12 bytes)
 
+### Argon2
 The Argon2 key derivation function is used to securely derive the encryption key from a user-provided passphrase. 
 The memory-hardness property of Argon2 makes it resistant to various attacks, including brute-force and dictionary attacks.
+- **Cryptographic Key Size**: 256 bits (32 bytes)
+- **Initialization Vector (IV) Size**: 96 bits (12 bytes)
 
 <br><br>
 
 ## Data Compressor
-VPK now includes a Compressor, which can significantly reduce the file sizes of VPK packages. By default, it uses 
-`Zstandard` as the compression method, which can reduce file sizes by up to 50% compared to uncompressed VPKs.
-
-### Methods
-The Compressor class provides two static methods:
-- `deflate(data, compression_mode)`: Compresses the given data using the specified compression mode.
-- `inflate(compressed_data, compression_mode)`: Decompresses the given compressed data using the specified compression mode.  
-  
+The V Package Explorer includes a compressor, which can significantly reduce the file sizes of VPK packages. 
+The compression methods are varying based on the trade-off between compression speed and file size reduction.
 
 ### Modes
 The following compression modes are available:
@@ -88,8 +88,6 @@ The following compression modes are available:
 - **Bzip2 (Slow)**: Offers a high compression ratio but is relatively slow in comparison to other methods.
 - **LZMA (Slow)**: Provides excellent compression at the cost of slower compression and decompression speeds.
 - **LZ4 (Fast)**: Prioritizes speed over compression ratio, making it ideal for scenarios where fast decompression is crucial.
-
-Choose the compression method that best fits your needs based on the trade-off between compression speed and file size reduction.
 
 
 <br><br>

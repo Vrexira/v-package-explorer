@@ -1,4 +1,5 @@
 import gzip
+import logging
 import os
 import pickle
 import struct
@@ -31,7 +32,6 @@ def get_vpk_info(data, bin=False):
 
 class Packager:
     def __init__(self, argonize: tuple, config: dict):
-        self.mode = 0
         self.timestamp = None
         self.byte_dict: dict = None
         self.directory: str = None
@@ -57,7 +57,7 @@ class Packager:
     
     def save(self):
         pickled_data = pickle.dumps(self.byte_dict)
-        encrypted_data = ac.encrypt_data(self.argonize, pickled_data, mode = self.mode)
+        encrypted_data = ac.encrypt_data(self.argonize, pickled_data, mode = ac.MODES[self.config['ArgonCrypto']['mode'].upper()])
         encrypted_data_bytes = pickle.dumps(encrypted_data)
         
         if "/" in self.package:
@@ -71,7 +71,7 @@ class Packager:
         author    = self.config['Settings']['author'].encode('utf-8')
         copyright = "VALKYTEQ ⓒ 2023".encode('utf-8')
         timestamp = int(time.time())
-        encryption = ac.MODES[self.mode].encode('utf-8')
+        encryption = self.config['ArgonCrypto']['mode'].upper().encode('utf-8')
         key_length = len(self.argonize)
         version = 1
         compression = self.config['Compressor']['mode'].encode('utf-8')
@@ -105,7 +105,7 @@ class Packager:
         if not error:
             try:
                 decrypted_data_bytes = pickle.loads(encrypted_data)
-                decrypted_data = ac.decrypt_data(self.argonize, decrypted_data_bytes, mode = 0)
+                decrypted_data = ac.decrypt_data(self.argonize, decrypted_data_bytes, mode = ac.MODES[self.config['ArgonCrypto']['mode'].upper()])
                 self.byte_dict = pickle.loads(decrypted_data)
                 
             except ValueError:
@@ -130,6 +130,6 @@ class Packager:
             
             elapsed = round(time.time()-self.timestamp, 2)
             elapsed_time = ('{: >10}'.format(str(elapsed)))
-            print(f"Finished | {package_name}.vpk | {file_amount} Files | {elapsed_time} sec")
+            logging.info(f"Finished | {package_name}.vpk | {file_amount} Files | {elapsed_time} sec")
         else:
             raise Exception("Error in directory path!")

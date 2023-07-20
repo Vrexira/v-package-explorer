@@ -56,6 +56,12 @@ def save_config(file_path, data):
         file.write(json.dumps(encrypted_data))
     
 def create_config(path):
+    author = False
+    while author is False:
+        author = PESetup.setup_author()
+    if author is None:
+        sys.exit()
+
     argon_key = False
     while argon_key is False:
         argon_key = PESetup.setup_crypto_key()
@@ -68,10 +74,10 @@ def create_config(path):
     if argon_iv is None:
         sys.exit()
     
-    author = False
-    while author is False:
-        author = PESetup.setup_author()
-    if author is None:
+    encryption = False
+    while encryption is False:
+        encryption = PESetup.setup_encryption()
+    if encryption is None:
         sys.exit()
     
     compressor = False
@@ -82,7 +88,7 @@ def create_config(path):
         
     data = {
         "Settings": {"author": author},
-        "ArgonCrypto": {"key": argon_key, "iv" : argon_iv},
+        "ArgonCrypto": {"key": argon_key, "iv" : argon_iv, "mode": encryption},
         "Compressor": {"mode": compressor}
     }
     save_config(path, data)

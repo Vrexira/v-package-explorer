@@ -5,7 +5,10 @@ from Cryptodome.Cipher import AES
 MODES = {
 	0: "AES-GCM",
 	1: "AES-CTR",
-	2: "AES-CBC"
+	2: "AES-CBC",
+	"AES-GCM": 0,
+	"AES-CTR": 1,
+	"AES-CBC": 2
 }
 
 
@@ -60,7 +63,7 @@ def encrypt_data(key: bytes, data: any, mode: int = 0) -> dict:
 			"iv": iv.hex()
 		}
 	else:
-		raise ValueError("Invalid mode")
+		raise ValueError("Invalid mode: 0 for AES-GCM, 1 for AES-CTR, 2 for AES-CBC")
 
 
 def decrypt_data(key: bytes, data: dict, mode: int = 0) -> str | bytes:
@@ -120,7 +123,7 @@ def decrypt_data(key: bytes, data: dict, mode: int = 0) -> str | bytes:
 		except UnicodeDecodeError:
 			return pt_bytes
 	else:
-		raise ValueError("Invalid mode")
+		raise ValueError("Invalid mode: 0 for AES-GCM, 1 for AES-CTR, 2 for AES-CBC")
 
 
 def generate_argon_key(secret: str, salt: str, key_length: int = 32, time_cost: int = 2, memory_cost: int = 100, parallelism: int = 8) -> bytes:

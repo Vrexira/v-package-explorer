@@ -1,3 +1,5 @@
 /.dev/
 /src/settings.argon
 /dist/settings.argon
+/src/logger.log
+/dist/logger.log
