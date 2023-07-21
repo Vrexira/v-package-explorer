@@ -10,15 +10,15 @@ import media files into existing packages, and toggle the display of child items
 
 ## Features
 
-- **Package Exploration**: Browse and explore the contents of VPK (Valky's Package) packages.
+- **Package Exploration**: Browse and explore the contents of VPK packages.
 - **Folder Navigation**: Toggle the display of child items in folders for easy navigation.
 - **File and Folder Management**: Create new folders, import media files into existing folders, and remove items from the package.
 - **Data Compression Methods**: Compress the data of VPK packages with different compression methods to reduce its file size.
 - **Encryption and Decryption**: V Package Explorer uses AES-GCM (Advanced Encryption Standard-Galois/Counter Mode) with a key derived from Argon2 for encryption and decryption of package contents, providing strong security.
 - **Argon2 Key Derivation**: The encryption key for AES-GCM is derived using Argon2, a memory-hard password hashing function, ensuring the security and confidentiality of package contents.
 - **Crypto Key and IV Configuration**: Change the cryptographic key and initialization vector (IV) used for encryption and decryption of package contents.
-- **VPK Creation**: Create new VPK (Valky's Package) packages from a selected directory or multiple directories listed in a text file.
-- **Settings Configuration**: Configure author name and other settings for the VPK (Valky's Package) packages.
+- **VPK Creation**: Create new VPK packages from a selected directory or multiple directories listed in a text file.
+- **Settings Configuration**: Configure author name and other settings for the VPK packages.
 
 ![packager](https://valkyteq.com/static/img/preview/packager.png?)
 ![logger](https://valkyteq.com/static/img/preview/logger.png?)
@@ -112,8 +112,8 @@ The following compression modes are available:
 ### Tools
  - To create a new folder, click on the "Add Folder" button in the "Package" menu, and enter the desired folder name when prompted. 
  - To import a media file into an existing folder, click on the "Add Media" button in the "Package" menu, and select the file from your system. 
- - To create a new VPK (Valky's Package) package from a selected directory, click on the "Create Package" button and choose the directory when prompted. 
- - To create VPK (Valky's Package) packages from multiple directories listed in a text file, click on the "Bulk VPK Creation" button and choose the text file when prompted.
+ - To create a new VPK package from a selected directory, click on the "Create Package" button and choose the directory when prompted. 
+ - To create VPK packages from multiple directories listed in a text file, click on the "Bulk VPK Creation" button and choose the text file when prompted.
 
 
 ### Settings
