@@ -125,16 +125,16 @@ The following compression modes are available:
 
 ### Help
  - To access additional resources and support, click on the following links:
-    - [VALKYTEQ Website](https://dev.valkyteq.com)
+    - [Valky's Website](https://valky.dev)
     - [GitHub Repository](https://github.com/ValkyFischer)
-    - [VALKYTEQ Discord Community](https://discord.com/invite/Nu7p6wX9Nb)
+    - [Valky's Discord](https://discord.gg/vky)
 
 <br><br>
 
 ## Community
 
 ### Creator
-The V Package Explorer is developed by [ValkyFischer](https://github.com/ValkyFischer), contact me if needed.
+The V Package Explorer is developed by [Valky Fischer](https://valky.dev/), contact me if needed.
 
 ### Contributions
 Contributions to the V Package Explorer project are welcome! If you find any bugs or have suggestions for 
@@ -157,7 +157,7 @@ credit. See the [LICENSE](LICENSE) file for more details.
 ## Support
 
 For any questions or issues regarding the V Package Explorer application, please join the 
-[VALKYTEQ Discord community](https://discord.com/invite/Nu7p6wX9Nb) and ask for assistance in the `#help` channel.
+[Valky's Dev Portal](https://discord.gg/vky) on Discord, and ask for assistance in the `#help` channel.
 
 <br><br>
 
