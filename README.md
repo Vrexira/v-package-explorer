@@ -4,7 +4,7 @@ V Package Explorer is a Python application that allows you to explore and manage
 Package) format. With the V Package Explorer, you can browse through the contents of VPK packages, create new packages, 
 import media files into existing packages, and toggle the display of child items in folders.
 
-*NOTE: This tool is only usable for machines using Microsoft Windows operating systems.*
+*NOTE: This tool is only usable for machines using Microsoft Windows operating systems. This tool is being reworked.*
 
 <br><br>
 
