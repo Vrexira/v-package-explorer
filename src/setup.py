@@ -1,9 +1,10 @@
-import base64
 import io
+import sys
+import base64
 import tkinter as tk
 from tkinter import simpledialog, messagebox, ttk
 from PIL import Image, ImageTk
-
+from ValkyrieUtils.Config import ValkyrieConfig
 from icon import EMBEDDED_ICON
 
 
@@ -148,3 +149,61 @@ class PESetup:
         if not child: window.mainloop()
         
         return encryption[0].split(" ")[0].lower()
+    
+    @staticmethod
+    def create_config(path, logger, debug = False):
+        logger.info("Creating configuration file...")
+        
+        author = False
+        while author is False:
+            author = PESetup.setup_author()
+        if author is None:
+            sys.exit()
+        
+        argon_key = False
+        while argon_key is False:
+            argon_key = PESetup.setup_crypto_key()
+        if argon_key is None:
+            sys.exit()
+        
+        argon_iv = False
+        while argon_iv is False:
+            argon_iv = PESetup.setup_crypto_iv()
+        if argon_iv is None:
+            sys.exit()
+        
+        encryption = False
+        while encryption is False:
+            encryption = PESetup.setup_encryption()
+        if encryption is None:
+            sys.exit()
+        
+        compressor = False
+        while compressor is False:
+            compressor = PESetup.setup_compressor()
+        if compressor is None:
+            sys.exit()
+        
+        data = {
+            "Settings": {"author": author},
+            "ArgonCrypto": {"key": argon_key, "iv": argon_iv, "mode": encryption},
+            "Compressor": {"mode": compressor}
+        }
+        
+        _cfg = ValkyrieConfig(path, logger, debug)
+        _cfg.save(data)
+        config = _cfg.get_config()
+        
+        return _cfg, config
+        
+        # save_config(path, data)
+        # return read_config(r".\settings.argon")
+    
+    @staticmethod
+    def read_config(path, logger, debug = False):
+        logger.info("Reading configuration file...")
+        
+        _cfg = ValkyrieConfig(path, logger, debug)
+        config = _cfg.get_config()
+        
+        return _cfg, config

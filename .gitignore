@@ -3,3 +3,7 @@
 /dist/settings.argon
 /src/logger.log
 /dist/logger.log
+/.idea/codeStyles/codeStyleConfig.xml
+/dev.ico
+/src/settings.vcf
+/dist/settings.vcf
