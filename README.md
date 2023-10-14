@@ -21,7 +21,6 @@ import media files into existing packages, and toggle the display of child items
 - **Settings Configuration**: Configure author name and other settings for the VPK packages.
 
 ![packager](https://valkyteq.com/static/img/preview/packager.png?)
-![logger](https://valkyteq.com/static/img/preview/logger.png?)
 
 <br><br>
 
